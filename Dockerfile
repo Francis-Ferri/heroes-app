@@ -11,7 +11,6 @@ COPY . ./
 
 RUN npm run build
 
-
 FROM node:14-slim
 
 # Create and change to the app directory.
