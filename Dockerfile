@@ -1,24 +1,25 @@
 FROM node:14-slim as build-step
 
-# Create and change to the app directory.
-WORKDIR /usr/src/app
+# Set working directory
+WORKDIR /app
 
-COPY package*.json ./
+# Copy all files from current directory to working dir in image
+COPY . .
 
-RUN npm install --only=production
+# install node modules and build assets
+RUN npm install && npm run build
 
-COPY . ./
+# nginx state for serving content
+FROM nginx:alpine
 
-RUN npm run build
+# Set working directory to nginx asset directory
+WORKDIR /usr/share/nginx/html
 
-FROM node:14-slim
+# Remove default nginx static assets
+RUN rm -rf ./*
 
-# Create and change to the app directory.
-WORKDIR /usr/src/app
+# Copy static assets from builder stage
+COPY --from=build-step /app/build .
 
-COPY --from=build-step /usr/src/app/build ./
-
-RUN npm install -g serve
-
-CMD [ "serve", "-s build" , "-l 8080"]
- 
+# Containers run nginx with global directives and daemon off
+ENTRYPOINT ["nginx", "-g", "daemon off;"]
